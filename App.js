@@ -1,29 +1,89 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
-
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Text, View} from 'react-native';
+import {
+  PermissionsAndroid,
+  StyleSheet,
+  Text,
+  View,
+  Button,
+} from 'react-native';
+import StaticServer from 'react-native-static-server';
+import RNFS from 'react-native-fs';
 
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android:
-    'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
+const path = RNFS.ExternalStorageDirectoryPath + '/Download/Image.jpg';
+const server = new StaticServer(8080, path);
 
-type Props = {};
-export default class App extends Component<Props> {
+export default class App extends Component {
+  state = { running: false, permissions: undefined };
+
+  requestReadExtPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        {
+          'title': 'RN Server needs permissions',
+          'message': 'The app needs to read your files to work'
+        }
+      )
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      } else return false;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  requestWriteExtPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          'title': 'RN Server needs permissions',
+          'message': 'The app needs to write your files to work'
+        }
+      )
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      } else return false;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  permissionsRequest = async () => {
+    const readPermission = await this.requestReadExtPermission();
+    // const writePermission = await this.requestWriteExtPermission();
+    return readPermission;
+  }
+
+  componentDidMount() {
+    console.log('Request');
+    this.permissionsRequest()
+    .then(res => this.setState({ permissions: res }));
+  }
+
+  toggleServer = () => {
+    const { running } = this.state;
+    server.start().then((url) => {
+      console.log("Serving at URL", url);
+    });
+    //this.setState({ running: !running });
+  }
+
   render() {
+    const { permissions } = this.state;
+
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>Welcome to React Native!</Text>
-        <Text style={styles.instructions}>To get started, edit App.js</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
+        <Text style={styles.instructions}>
+          {permissions ? 'Read/Write Aproved!' : 'Permissions Missing'}
+        </Text>
+        <Button
+          onPress={this.toggleServer}
+          title="Stop/Start Server"
+          color="#841584"
+          accessibilityLabel="Learn more about this purple button"
+        />
       </View>
     );
   }
