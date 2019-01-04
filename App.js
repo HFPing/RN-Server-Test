@@ -93,7 +93,7 @@ export default class App extends Component {
 
     added.then(() => {
       // Create a StaticServer at port 3030
-      this.server = new StaticServer(this.port, this.root, {localOnly: true});
+      this.server = new StaticServer(this.port, this.root, {localOnly: false});
 
       this.server.start().then((origin) => {
         console.log(origin);
